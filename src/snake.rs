@@ -38,7 +38,7 @@ impl Snake {
     pub fn respawn(&mut self, gop: &mut GraphicsOutput) {
         self.segments.iter().for_each(|segment| {
             gop.blt(BltOp::VideoFill {
-                color: BltPixel::new(0, 0, 0),
+                color: BltPixel::new(50, 50, 50),
                 dest: (segment.0 * game::TILE_SIZE, segment.1 * game::TILE_SIZE),
                 dims: (game::TILE_SIZE, game::TILE_SIZE),
             })
@@ -93,7 +93,7 @@ impl Snake {
         let segment = self.segments.pop_back().unwrap();
 
         gop.blt(BltOp::VideoFill {
-            color: BltPixel::new(0, 0, 0),
+            color: BltPixel::new(50, 50, 50),
             dest: (segment.0 * game::TILE_SIZE, segment.1 * game::TILE_SIZE),
             dims: (game::TILE_SIZE, game::TILE_SIZE),
         })

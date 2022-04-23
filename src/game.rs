@@ -48,14 +48,14 @@ impl<'a> Game<'a> {
     pub fn run(&mut self) {
         self.gop
             .blt(BltOp::VideoFill {
-                color: BltPixel::new(50, 50, 50),
+                color: BltPixel::new(0, 0, 0),
                 dest: (0, 0),
                 dims: self.gop.current_mode_info().resolution(),
             })
             .unwrap();
         self.gop
             .blt(BltOp::VideoFill {
-                color: BltPixel::new(0, 0, 0),
+                color: BltPixel::new(50, 50, 50),
                 dest: (0, 0),
                 dims: (self.field_width * TILE_SIZE, self.field_height * TILE_SIZE),
             })
@@ -84,7 +84,7 @@ impl<'a> Game<'a> {
                         let position = self.food.position();
                         self.gop
                             .blt(BltOp::VideoFill {
-                                color: BltPixel::new(0, 0, 0),
+                                color: BltPixel::new(50, 50, 50),
                                 dest: (position.0 * TILE_SIZE, position.1 * TILE_SIZE),
                                 dims: (TILE_SIZE, TILE_SIZE),
                             })
