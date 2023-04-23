@@ -10,6 +10,9 @@ lto = true
 strip = true
 panic = "abort"
 
+[dependencies]
+uefi-services = "0.17.0"
+
 [dependencies.uefi]
-version = "0.15.2"
+version = "0.20.0"
 features = ["alloc"]

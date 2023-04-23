@@ -1,19 +1,18 @@
 use alloc::collections::VecDeque;
-use uefi::proto::console::gop::{BltOp, BltPixel, GraphicsOutput};
+use uefi::{
+    proto::console::gop::{BltOp, BltPixel, GraphicsOutput},
+    table::boot::ScopedProtocol,
+};
 
 use crate::game;
 
+#[derive(Default)]
 enum Direction {
     Up,
+    #[default]
     Right,
     Down,
     Left,
-}
-
-impl Default for Direction {
-    fn default() -> Self {
-        Direction::Right
-    }
 }
 
 pub struct Snake {
@@ -35,7 +34,7 @@ impl Default for Snake {
 }
 
 impl Snake {
-    pub fn respawn(&mut self, gop: &mut GraphicsOutput) {
+    pub fn respawn(&mut self, gop: &mut ScopedProtocol<'_, GraphicsOutput>) {
         self.segments.iter().for_each(|segment| {
             gop.blt(BltOp::VideoFill {
                 color: BltPixel::new(50, 50, 50),
@@ -109,7 +108,7 @@ impl Snake {
         .unwrap();
     }
 
-    pub fn eat(&mut self, gop: &mut GraphicsOutput, position: (usize, usize)) {
+    pub fn eat(&mut self, gop: &mut ScopedProtocol<'_, GraphicsOutput>, position: (usize, usize)) {
         self.segments.push_front(position);
 
         gop.blt(BltOp::VideoFill {

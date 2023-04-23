@@ -1,9 +1,12 @@
-use uefi::proto::{
-    console::{
-        gop::{BltOp, BltPixel, GraphicsOutput},
-        text::{Input, Key},
+use uefi::{
+    proto::{
+        console::{
+            gop::{BltOp, BltPixel, GraphicsOutput},
+            text::{Input, Key},
+        },
+        rng::Rng,
     },
-    rng::Rng,
+    table::boot::ScopedProtocol,
 };
 
 use crate::{food::Food, snake::Snake, timer::Timer};
@@ -16,16 +19,16 @@ pub struct Game<'a> {
     field_height: usize,
     snake: Snake,
     food: Food,
-    gop: &'a mut GraphicsOutput<'a>,
-    rng: &'a mut Rng,
+    gop: ScopedProtocol<'a, GraphicsOutput>,
+    rng: ScopedProtocol<'a, Rng>,
     input: &'a mut Input,
     timer: Timer<'a>,
 }
 
 impl<'a> Game<'a> {
     pub fn new(
-        gop: &'a mut GraphicsOutput<'a>,
-        rng: &'a mut Rng,
+        gop: ScopedProtocol<'a, GraphicsOutput>,
+        rng: ScopedProtocol<'a, Rng>,
         input: &'a mut Input,
         timer: Timer<'a>,
     ) -> Self {
@@ -46,11 +49,13 @@ impl<'a> Game<'a> {
     }
 
     pub fn run(&mut self) {
+        let dims = self.gop.current_mode_info().resolution();
+
         self.gop
             .blt(BltOp::VideoFill {
                 color: BltPixel::new(0, 0, 0),
                 dest: (0, 0),
-                dims: self.gop.current_mode_info().resolution(),
+                dims,
             })
             .unwrap();
         self.gop
@@ -61,7 +66,7 @@ impl<'a> Game<'a> {
             })
             .unwrap();
 
-        self.snake.respawn(self.gop);
+        self.snake.respawn(&mut self.gop);
         self.respawn_food();
 
         loop {
@@ -73,13 +78,13 @@ impl<'a> Game<'a> {
                 self.bounds(&mut position);
 
                 if self.food.position() == position {
-                    self.snake.eat(self.gop, position);
+                    self.snake.eat(&mut self.gop, position);
                     self.respawn_food();
                 } else {
-                    self.snake.crawl(self.gop, position);
+                    self.snake.crawl(&mut self.gop, position);
 
                     if self.snake.dead() {
-                        self.snake.respawn(self.gop);
+                        self.snake.respawn(&mut self.gop);
 
                         let position = self.food.position();
                         self.gop
@@ -145,7 +150,7 @@ impl<'a> Game<'a> {
             );
 
             if !self.snake.contains(position) {
-                self.food.respawn(self.gop, position);
+                self.food.respawn(&mut self.gop, position);
                 break;
             }
         }

@@ -1,6 +1,5 @@
 #![no_std]
 #![no_main]
-#![feature(alloc_error_handler)]
 
 extern crate alloc;
 
@@ -9,30 +8,29 @@ mod game;
 mod snake;
 mod timer;
 
-use core::{alloc::Layout, panic::PanicInfo};
-
 use game::Game;
 use timer::Timer;
 use uefi::{
+    entry,
     proto::{console::gop::GraphicsOutput, rng::Rng},
     table::{Boot, SystemTable},
     Handle, Status,
 };
 
-#[no_mangle]
-fn efi_main(_: Handle, system_table: SystemTable<Boot>) -> Status {
-    unsafe {
-        uefi::alloc::init(system_table.boot_services());
-    };
+#[entry]
+fn main(handle: Handle, mut system_table: SystemTable<Boot>) -> Status {
+    uefi_services::init(&mut system_table).unwrap();
 
     let boot_services = system_table.boot_services();
 
-    let gop = unsafe {
-        &mut *boot_services
-            .locate_protocol::<GraphicsOutput>()
-            .unwrap()
-            .get()
-    };
+    let gop_handle = boot_services
+        .get_handle_for_protocol::<GraphicsOutput>()
+        .unwrap();
+
+    let mut gop = boot_services
+        .open_protocol_exclusive::<GraphicsOutput>(gop_handle)
+        .unwrap();
+
     let mode = gop
         .modes()
         .max_by(|x, y| {
@@ -44,7 +42,11 @@ fn efi_main(_: Handle, system_table: SystemTable<Boot>) -> Status {
         .unwrap();
     gop.set_mode(&mode).unwrap();
 
-    let rng = unsafe { &mut *boot_services.locate_protocol::<Rng>().unwrap().get() };
+    let rng_handle = boot_services.get_handle_for_protocol::<Rng>().unwrap();
+
+    let rng = boot_services
+        .open_protocol_exclusive::<Rng>(rng_handle)
+        .unwrap();
 
     let timer = Timer::new(boot_services);
 
@@ -57,14 +59,4 @@ fn efi_main(_: Handle, system_table: SystemTable<Boot>) -> Status {
     .run();
 
     Status::SUCCESS
-}
-
-#[alloc_error_handler]
-fn alloc_error(_: Layout) -> ! {
-    panic!("Alloc error");
-}
-
-#[panic_handler]
-fn panic(_: &PanicInfo) -> ! {
-    loop {}
 }
